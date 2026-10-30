@@ -50,12 +50,26 @@ h2{font-size:clamp(28px,4vw,40px);font-weight:700;margin-bottom:40px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:32px}
 .card h3{font-size:22px;margin:16px 0 6px;font-weight:500}
 .card p{margin:0;color:var(--mute);font-size:15px}
-/* Portfólio */
-.work{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:32px}
-.work figure{margin:0}
-.work img{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:2px;background:var(--soft)}
-.work figcaption{margin-top:12px;font-size:15px;color:var(--mute)}
-.work figcaption strong{display:block;color:var(--ink);font-family:"Bricolage Grotesque",sans-serif;font-weight:500;font-size:20px;margin-bottom:2px}
+/* Portfólio: carrossel */
+.carousel{position:relative;max-width:560px}
+.track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:4px;background:var(--soft)}
+.track::-webkit-scrollbar{display:none}
+.track:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.slide{flex:0 0 100%;scroll-snap-align:center;margin:0}
+.slide .ph{aspect-ratio:1/1;overflow:hidden;background:var(--soft)}
+.slide img{width:100%;height:100%;object-fit:cover;display:block}
+.slide figcaption{padding:16px 20px 20px;font-size:15px;color:var(--mute);background:var(--bg);border-top:1px solid var(--line)}
+.slide figcaption strong{display:block;color:var(--ink);font-family:"Bricolage Grotesque",sans-serif;font-weight:500;font-size:20px;margin-bottom:2px}
+.arrow{position:absolute;top:calc(50% - 50px);width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);transition:background .2s,color .2s,opacity .2s}
+.arrow:hover:not(:disabled){background:var(--accent);color:#fff;border-color:var(--accent)}
+.arrow:disabled{opacity:.35;cursor:default}
+.arrow svg{width:20px;height:20px}
+.arrow.prev{left:12px}
+.arrow.next{right:12px}
+.car-foot{display:flex;align-items:center;justify-content:space-between;margin-top:16px;font-size:14px;color:var(--mute)}
+.dots{display:flex;gap:8px}
+.dots button{width:10px;height:10px;padding:0;border-radius:99px;border:0;background:var(--line);cursor:pointer;transition:width .25s,background .25s}
+.dots button[aria-current="true"]{width:28px;background:var(--accent)}
 /* Sobre */
 .about{display:grid;grid-template-columns:1fr 1fr;gap:56px}
 .about p{margin:0 0 16px;max-width:60ch}
@@ -121,14 +135,23 @@ nav ul{gap:16px}
 
 <section id="portfolio">
 <h2>Portfólio</h2>
-<div class="work">
-<figure>
-<img src="image.png" alt="Arte de divulgação com um capoeirista de ponta-cabeça, berimbau e grafismos, com o texto Capoeirista: a força da capoeira está na união." loading="lazy">
+<div class="carousel" aria-roledescription="carrossel" aria-label="Trabalhos do portfólio">
+<div class="track" id="track" tabindex="0">
+<figure class="slide">
+<div class="ph"><img src="imagem.png" alt="Arte de divulgação com um capoeirista de ponta-cabeça, berimbau e grafismos, com o texto Capoeirista: a força da capoeira está na união." loading="lazy"></div>
 <figcaption>
 <strong>Capoeirista</strong>
 Arte para redes sociais: edição de foto, tipografia e grafismos.
 </figcaption>
 </figure>
+<!-- Para adicionar outro trabalho, copie o bloco <figure class="slide">…</figure> inteiro e troque a imagem e o texto -->
+</div>
+<button class="arrow prev" id="prev" aria-label="Anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+<button class="arrow next" id="next" aria-label="Próximo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+<div class="car-foot">
+<div class="dots" id="dots"></div>
+<span id="count" aria-live="polite"></span>
+</div>
 </div>
 </section>
 
@@ -168,5 +191,38 @@ Arte para redes sociais: edição de foto, tipografia e grafismos.
 
 <footer>© 2026 Wallacy</footer>
 </div>
+<script>
+(function(){
+var track=document.getElementById('track'),
+    slides=track.children,
+    prev=document.getElementById('prev'),
+    next=document.getElementById('next'),
+    dots=document.getElementById('dots'),
+    count=document.getElementById('count'),
+    n=slides.length, i=0;
+for(var k=0;k<n;k++){(function(k){
+  var b=document.createElement('button');
+  b.setAttribute('aria-label','Ir para o trabalho '+(k+1));
+  b.onclick=function(){go(k)};
+  dots.appendChild(b);
+})(k)}
+function go(k){track.scrollTo({left:k*track.clientWidth,behavior:'smooth'})}
+function update(){
+  i=Math.round(track.scrollLeft/track.clientWidth);
+  prev.disabled=i<=0; next.disabled=i>=n-1;
+  for(var k=0;k<n;k++) dots.children[k].setAttribute('aria-current',k===i?'true':'false');
+  count.textContent=(i+1)+' / '+n;
+}
+prev.onclick=function(){go(i-1)};
+next.onclick=function(){go(i+1)};
+track.addEventListener('scroll',function(){requestAnimationFrame(update)});
+track.addEventListener('keydown',function(e){
+  if(e.key==='ArrowLeft'){e.preventDefault();go(i-1)}
+  if(e.key==='ArrowRight'){e.preventDefault();go(i+1)}
+});
+window.addEventListener('resize',update);
+update();
+})();
+</script>
 </body>
 </html>
